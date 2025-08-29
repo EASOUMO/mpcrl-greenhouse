@@ -6,7 +6,7 @@ import numpy as np
 from joblib import Parallel, delayed
 from mpcrl.wrappers.envs import MonitorEpisodes
 
-from agents.ddpg_agent import train_ddpg
+from agents.td3_agent import train_td3  # CHANGED: import TD3 trainer
 from utils.plot import plot_greenhouse
 
 
@@ -17,13 +17,13 @@ def do_training(
     seed: int | None = None,
     devices: str | Collection[str] = "auto",
 ) -> Iterator[tuple[MonitorEpisodes, MonitorEpisodes]]:
-    """Launches the training of `n_agents` DDPG agents in parallel."""
+    """Launches the training of `n_agents` TD3 agents in parallel."""
     if isinstance(devices, str):
         devices = (devices,)
     seeds = np.random.SeedSequence(seed).generate_state(n_agents)
 
     def fun(n: int):
-        return train_ddpg(
+        return train_td3(  # CHANGED: use TD3 trainer
             agent_num=n,
             episodes=episodes,
             days_per_episode=days_per_episode,
@@ -32,7 +32,7 @@ def do_training(
             l2_regularization=1e-5,
             batch_size=64,
             buffer_size=10_000,
-            gamma=0.99,  # NOTE: different from Morcego et al.
+            gamma=0.99,
             seed=int(seeds[n]),
             device=devices[n % len(devices)],
             verbose=1,
@@ -72,7 +72,7 @@ def do_plotting(
 
 
 def store_data(
-    data: dict[str, dict[str, np.ndarray]], identifier: str = "ddpg"
+    data: dict[str, dict[str, np.ndarray]], identifier: str = "td3"  # CHANGED default
 ) -> None:
     """Stores the simulation data to disk."""
     for env_type in ("train", "eval"):
@@ -95,7 +95,7 @@ if __name__ == "__main__":
         days_per_episode=40,
         n_agents=3,
         seed=1,
-        devices=("cuda:0"),
+        devices=("cuda:0",),
     )
 
     # process and plot or store data
@@ -105,9 +105,7 @@ if __name__ == "__main__":
         simdata = process_simulations(simulations)
 
         if PLOT:
-            # for now, can only plot one agent from one type
             do_plotting(data=simdata, agent_to_plot=0, env_type="train")
 
         if STORE_DATA:
-            # for now, each agent from each type is saved to a separate file
             store_data(simdata)

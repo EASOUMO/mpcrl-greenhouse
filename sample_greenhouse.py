@@ -38,7 +38,7 @@ num_episodes = 1
 initial_days = [0]
 
 multistarts = 1
-num_samples = 10
+num_samples = 100
 prediction_model: Literal["euler", "rk4"] = "rk4"
 sample_mpc = SampleBasedMpc(
     n_samples=num_samples,
